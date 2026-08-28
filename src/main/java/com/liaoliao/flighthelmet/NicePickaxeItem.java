@@ -121,4 +121,8 @@ public final class NicePickaxeItem extends PickaxeItem {
     public static void resetClientRightClick() {
         clientRightClickHeld = false;
     }
+
+    public static boolean isClientRightClickHeld() {
+        return clientRightClickHeld;
+    }
 }

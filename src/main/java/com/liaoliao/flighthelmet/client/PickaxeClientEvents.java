@@ -4,9 +4,9 @@ import com.liaoliao.flighthelmet.NicePickaxeItem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.item.ItemStack;
+import org.lwjgl.glfw.GLFW;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.InputEvent;
-import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -33,13 +33,23 @@ public final class PickaxeClientEvents {
     }
 
     @SubscribeEvent
-    public static void onClientTick(TickEvent.ClientTickEvent event) {
-        if (event.phase != TickEvent.Phase.END) {
+    public static void onMouseButton(InputEvent.MouseButton event) {
+        if (event.getButton() == GLFW.GLFW_MOUSE_BUTTON_RIGHT
+                && event.getAction() == GLFW.GLFW_RELEASE) {
+            NicePickaxeItem.resetClientRightClick();
+        }
+    }
+
+    @SubscribeEvent(priority = EventPriority.HIGHEST)
+    public static void onInteractionKeyMappingTriggered(InputEvent.InteractionKeyMappingTriggered event) {
+        if (!event.isUseItem() || event.getHand() != net.minecraft.world.InteractionHand.MAIN_HAND) {
             return;
         }
         Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.player == null || !minecraft.options.keyUse.isDown()) {
-            NicePickaxeItem.resetClientRightClick();
+        LocalPlayer player = minecraft.player;
+        if (player != null && player.getMainHandItem().getItem() instanceof NicePickaxeItem
+                && NicePickaxeItem.isClientRightClickHeld()) {
+            event.setCanceled(true);
         }
     }
 
