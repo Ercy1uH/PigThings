@@ -41,6 +41,25 @@ public final class FlightAbilityHandler {
     }
 
     @SubscribeEvent
+    public static void onPlayerChangedDimension(PlayerEvent.PlayerChangedDimensionEvent event) {
+        if (!(event.getEntity() instanceof ServerPlayer player)) {
+            return;
+        }
+        ItemStack activeStack = getActiveStack(player);
+        if (activeStack.isEmpty()) {
+            restorePreviousAbilities(player);
+            return;
+        }
+        applyHelmetAbilities(player, activeStack);
+        player.onUpdateAbilities();
+        if (FlightHelmetSettings.hasNightVision(activeStack)) {
+            player.removeEffect(MobEffects.NIGHT_VISION);
+            player.addEffect(new MobEffectInstance(MobEffects.NIGHT_VISION, -1, 0, false, false, false));
+            player.getPersistentData().putBoolean(NIGHT_VISION_GRANTED_KEY, true);
+        }
+    }
+
+    @SubscribeEvent
     public static void onBreakSpeed(PlayerEvent.BreakSpeed event) {
         Player player = event.getEntity();
         if (!player.getAbilities().flying || player.onGround()) {
