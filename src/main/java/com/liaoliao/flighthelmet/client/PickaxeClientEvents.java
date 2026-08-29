@@ -50,6 +50,7 @@ public final class PickaxeClientEvents {
         if (player != null && player.getMainHandItem().getItem() instanceof NicePickaxeItem
                 && NicePickaxeItem.isClientRightClickHeld()) {
             event.setCanceled(true);
+            event.setSwingHand(false);
         }
     }
 
