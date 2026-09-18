@@ -1,0 +1,35 @@
+item.pigthings.nice_helmet.name=多功能头盔
+item.pigthings.nice_ring.name=多功能戒指
+item.pigthings.nice_pickaxe.name=障碍破坏者
+
+key.pigthings.open_settings=打开设置界面
+key.pigthings.search_container=搜索附近容器
+key.categories.pigthings=猪嘛的小玩意
+
+message.pigthings.search_no_item=请将鼠标悬停在物品上
+message.pigthings.search_started=正在搜索附近容器...
+message.pigthings.search_result=找到 %s 个存有该物品的容器
+message.pigthings.search_target=已定位第 %s / %s 个容器
+
+screen.pigthings.title=多功能头盔设置
+screen.pigthings.ring.title=多功能戒指设置
+screen.pigthings.speed=飞行速度：%s 倍
+screen.pigthings.no_inertia.on=无惯性：开启
+screen.pigthings.no_inertia.off=无惯性：关闭
+screen.pigthings.night_vision.on=夜视：开启
+screen.pigthings.night_vision.off=夜视：关闭
+screen.pigthings.magnet=磁铁功能
+screen.pigthings.magnet.title=磁铁设置
+screen.pigthings.magnet.on=磁铁：开启
+screen.pigthings.magnet.off=磁铁：关闭
+screen.pigthings.magnet.range_x=X 轴范围：%s 格
+screen.pigthings.magnet.range_y=Y 轴范围：%s 格
+screen.pigthings.magnet.range_z=Z 轴范围：%s 格
+screen.pigthings.back=返回
+screen.pigthings.done=完成
+
+tooltip.pigthings.nice_pickaxe.precise.on=精准采集：开启
+tooltip.pigthings.nice_pickaxe.precise.off=精准采集：关闭
+screen.pigthings.nice_pickaxe.title=障碍破坏者设置
+screen.pigthings.nice_pickaxe.precise.on=精准采集：开启
+screen.pigthings.nice_pickaxe.precise.off=精准采集：关闭

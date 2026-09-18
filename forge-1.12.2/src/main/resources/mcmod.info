@@ -1,0 +1,17 @@
+[
+{
+  "modid": "pigthings",
+  "name": "PigThings",
+  "description": "Adds the multifunctional helmet, ring and obstacle breaker.",
+  "version": "${version}",
+  "mcversion": "${mcversion}",
+  "url": "",
+  "updateUrl": "",
+  "authorList": ["Pig"],
+  "credits": "",
+  "logoFile": "",
+  "screenshots": [],
+  "parent": "",
+  "dependencies": ["baubles"]
+}
+]
