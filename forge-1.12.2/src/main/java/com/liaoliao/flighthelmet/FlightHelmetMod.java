@@ -5,6 +5,8 @@ import com.liaoliao.flighthelmet.network.ModNetwork;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemArmor;
 import net.minecraftforge.common.config.Configuration;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
@@ -16,25 +18,27 @@ import net.minecraftforge.registries.IForgeRegistry;
         acceptedMinecraftVersions = "[1.12,1.13)", dependencies = "required-after:baubles")
 public final class FlightHelmetMod {
     public static final String MOD_ID = "pigthings";
-    public static final String VERSION = "1.6.7-forge-1.12.2";
+    /** 与 gradle.properties 的 mod_version 保持一致：模组列表显示的版本号来自这里的 @Mod 注解。 */
+    public static final String VERSION = "1.7.2";
+    public static final Logger LOGGER = LogManager.getLogger(MOD_ID);
 
     public static Item FLIGHT_HELMET;
     public static Item NICE_RING;
     public static Item NICE_PICKAXE;
 
-    public static int SEARCH_RANGE_X = 24;
-    public static int SEARCH_RANGE_Y = 24;
-    public static int SEARCH_RANGE_Z = 24;
+    public static int SEARCH_RANGE_X = 32;
+    public static int SEARCH_RANGE_Y = 32;
+    public static int SEARCH_RANGE_Z = 32;
 
     @Mod.EventHandler
     public void preInit(FMLPreInitializationEvent event) {
         Configuration configuration = new Configuration(event.getSuggestedConfigurationFile());
         configuration.load();
-        SEARCH_RANGE_X = configuration.getInt("range_x", "container_search", 24, 1, 64,
+        SEARCH_RANGE_X = configuration.getInt("range_x", "container_search", 32, 1, 64,
                 "Container search range along the X axis from the player's feet.");
-        SEARCH_RANGE_Y = configuration.getInt("range_y", "container_search", 24, 1, 64,
+        SEARCH_RANGE_Y = configuration.getInt("range_y", "container_search", 32, 1, 64,
                 "Container search range along the Y axis from the player's feet.");
-        SEARCH_RANGE_Z = configuration.getInt("range_z", "container_search", 24, 1, 64,
+        SEARCH_RANGE_Z = configuration.getInt("range_z", "container_search", 32, 1, 64,
                 "Container search range along the Z axis from the player's feet.");
         configuration.save();
 

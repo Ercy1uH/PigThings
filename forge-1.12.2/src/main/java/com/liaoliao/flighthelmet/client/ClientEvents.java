@@ -11,6 +11,7 @@ import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.client.gui.GuiChat;
 import net.minecraft.client.gui.inventory.GuiContainer;
 import net.minecraft.client.gui.inventory.GuiInventory;
+import net.minecraft.client.settings.KeyBinding;
 import net.minecraft.inventory.EntityEquipmentSlot;
 import net.minecraft.inventory.Slot;
 import net.minecraft.item.ItemStack;
@@ -23,6 +24,7 @@ import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
+import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 
 @SideOnly(Side.CLIENT)
@@ -50,13 +52,13 @@ public final class ClientEvents {
             NicePickaxeItem.resetClientRightClick();
         }
 
-        boolean settingsDown = PigThingsKeys.OPEN_SETTINGS.isKeyDown();
+        boolean settingsDown = isKeyHeld(PigThingsKeys.OPEN_SETTINGS);
         if (settingsDown && !settingsKeyDown) {
             openSettingsScreen(minecraft, player);
         }
         settingsKeyDown = settingsDown;
 
-        boolean searchDown = PigThingsKeys.SEARCH_CONTAINER.isKeyDown();
+        boolean searchDown = isKeyHeld(PigThingsKeys.SEARCH_CONTAINER);
         if (searchDown && !searchKeyDown) {
             startContainerSearch(minecraft, player);
         }
@@ -97,16 +99,29 @@ public final class ClientEvents {
         }
     }
 
+    /**
+     * 1.12.2 的 KeyBinding.isKeyDown() 读的是 pressed 字段（由 Minecraft 每 tick 用 setKeyBindState 维护），
+     * 而 MC 只在没有界面打开时才更新它 —— 开着箱子/背包界面按 Y 会永远是 false。
+     * 这里直接轮询物理按键（仍按绑定后的 keyCode，改键后同样有效）。
+     */
+    private static boolean isKeyHeld(KeyBinding binding) {
+        int keyCode = binding.getKeyCode();
+        if (keyCode == 0) {
+            return false;
+        }
+        return keyCode < 0 ? Mouse.isButtonDown(keyCode + 100) : Keyboard.isKeyDown(keyCode);
+    }
+
     private static void startContainerSearch(Minecraft minecraft, EntityPlayerSP player) {
-        if (minecraft.currentScreen instanceof GuiChat) {
+        if (minecraft.currentScreen instanceof GuiChat || ItemManagerHoverResolver.isSearchFieldFocused()) {
             return;
         }
-        ItemStack target = ItemStack.EMPTY;
-        boolean openedContainer = false;
-        if (minecraft.currentScreen instanceof GuiContainer) {
-            GuiContainer container = (GuiContainer) minecraft.currentScreen;
-            openedContainer = !(container instanceof GuiInventory);
-            Slot slot = container.getSlotUnderMouse();
+        // 与 1.21 线一致的优先级：物品管理器悬停 > 容器槽位 > 上一次的提示物品。
+        ItemStack target = ItemManagerHoverResolver.getHoveredItem();
+        boolean openedContainer = minecraft.currentScreen instanceof GuiContainer
+                && !(minecraft.currentScreen instanceof GuiInventory);
+        if (target.isEmpty() && minecraft.currentScreen instanceof GuiContainer) {
+            Slot slot = ((GuiContainer) minecraft.currentScreen).getSlotUnderMouse();
             if (slot != null && slot.getHasStack()) {
                 target = slot.getStack().copy();
             }
@@ -114,6 +129,8 @@ public final class ClientEvents {
         if (target.isEmpty() && !lastTooltipItem.isEmpty()) {
             target = lastTooltipItem.copy();
         }
+        FlightHelmetMod.LOGGER.info("Container search requested: {} x{}",
+                target.isEmpty() ? "<empty>" : target.getDisplayName(), target.getCount());
         if (target.isEmpty()) {
             player.sendStatusMessage(new TextComponentTranslation("message.pigthings.search_no_item"), true);
             return;

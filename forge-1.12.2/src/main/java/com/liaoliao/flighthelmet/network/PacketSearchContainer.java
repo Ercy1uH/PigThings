@@ -11,8 +11,8 @@ import java.util.Set;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.inventory.IInventory;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
+import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.fml.common.network.ByteBufUtils;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
@@ -46,6 +46,10 @@ public class PacketSearchContainer implements IMessage {
     }
 
     public static class Handler implements IMessageHandler<PacketSearchContainer, IMessage> {
+        private static final int RESULT_NO_STORAGE = 0;
+        private static final int RESULT_NO_MATCH = 1;
+        private static final int RESULT_MATCH = 2;
+
         @Override
         public IMessage onMessage(PacketSearchContainer message, MessageContext ctx) {
             EntityPlayerMP player = ctx.getServerHandler().player;
@@ -64,6 +68,8 @@ public class PacketSearchContainer implements IMessage {
             int rangeY = FlightHelmetMod.SEARCH_RANGE_Y;
             int rangeZ = FlightHelmetMod.SEARCH_RANGE_Z;
             Set<BlockPos> matches = new HashSet<>();
+            int inspected = 0;
+            int withStorage = 0;
 
             for (TileEntity tileEntity : new ArrayList<>(player.world.loadedTileEntityList)) {
                 if (tileEntity == null || tileEntity.isInvalid()) {
@@ -75,57 +81,93 @@ public class PacketSearchContainer implements IMessage {
                         || Math.abs(pos.getZ() - origin.getZ()) > rangeZ) {
                     continue;
                 }
-                if (contains(player, pos, target)) {
+                inspected++;
+                int result = inspect(player, pos, target);
+                if (result != RESULT_NO_STORAGE) {
+                    withStorage++;
+                }
+                if (result == RESULT_MATCH) {
                     matches.add(getContainerOrigin(player, pos));
                 }
             }
 
             List<BlockPos> sortedMatches = new ArrayList<>(matches);
             sortedMatches.sort(Comparator.comparingDouble(position -> position.distanceSq(origin)));
+            FlightHelmetMod.LOGGER.info(
+                    "Container search finished: {} matches for {} x{} (scanned {} tile entities in range, {} with item storage)",
+                    sortedMatches.size(), target.getDisplayName(), target.getCount(), inspected, withStorage);
             ModNetwork.CHANNEL.sendTo(new PacketSearchContainerResult(sortedMatches, target, openedContainer), player);
         }
 
-        private static boolean contains(EntityPlayerMP player, BlockPos pos, ItemStack target) {
+        /**
+         * 扫描一个方块实体：0 = 没有物品存储，1 = 有存储但没找到，2 = 命中。
+         * 除了原版 IInventory，还查 Forge 能力接口，并且六个面都试一遍：
+         * GregTech 的机器（板条箱就是 MetaTileEntityCrate）只对特定面暴露物品栏，
+         * 只查 null 面会整台机器漏掉。
+         */
+        private static int inspect(EntityPlayerMP player, BlockPos pos, ItemStack target) {
             TileEntity tileEntity = player.world.getTileEntity(pos);
             if (tileEntity == null) {
-                return false;
+                return RESULT_NO_STORAGE;
             }
+            boolean hasStorage = false;
             if (tileEntity instanceof IInventory) {
                 IInventory inventory = (IInventory) tileEntity;
+                hasStorage = true;
                 for (int slot = 0; slot < inventory.getSizeInventory(); slot++) {
                     if (matchesExactly(inventory.getStackInSlot(slot), target)) {
-                        return true;
+                        return RESULT_MATCH;
                     }
                 }
             }
-            if (tileEntity.hasCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, null)) {
-                IItemHandler handler = tileEntity.getCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, null);
-                if (handler != null) {
-                    for (int slot = 0; slot < handler.getSlots(); slot++) {
-                        if (matchesExactly(handler.getStackInSlot(slot), target)) {
-                            return true;
-                        }
-                    }
+            IItemHandler handler = tileEntity.getCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, null);
+            if (handler != null) {
+                hasStorage = true;
+                if (handlerContains(handler, target)) {
+                    return RESULT_MATCH;
+                }
+            }
+            for (EnumFacing side : EnumFacing.values()) {
+                IItemHandler sidedHandler = tileEntity.getCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, side);
+                if (sidedHandler == null || sidedHandler == handler) {
+                    continue;
+                }
+                hasStorage = true;
+                if (handlerContains(sidedHandler, target)) {
+                    return RESULT_MATCH;
+                }
+            }
+            return hasStorage ? RESULT_NO_MATCH : RESULT_NO_STORAGE;
+        }
+
+        private static boolean handlerContains(IItemHandler handler, ItemStack target) {
+            for (int slot = 0; slot < handler.getSlots(); slot++) {
+                if (matchesExactly(handler.getStackInSlot(slot), target)) {
+                    return true;
                 }
             }
             return false;
         }
 
+        /**
+         * 连体容器（双箱、陷阱双箱等）会被扫描到多次，必须规范化成同一个代表位置，
+         * 否则一个双箱会占两条结果、提示出现“2/2”。
+         */
         private static BlockPos getContainerOrigin(EntityPlayerMP player, BlockPos pos) {
-            BlockPos connectedPos = DoubleChestHelper.getConnectedPosition(player.world, pos);
-            if (connectedPos == null) {
-                return pos;
-            }
-            return pos.getY() <= connectedPos.getY() ? pos : connectedPos;
+            return DoubleChestHelper.getContainerOrigin(player.world, pos);
         }
 
+        /**
+         * 比对物品 + 损伤值(metadata) + NBT，忽略堆叠数量。
+         * 不能用 ItemStack.areItemStacksEqual：1.12.2 里它转调 isItemStackEqual，把 stackSize 也比进去，
+         * 于是只有"堆叠数量和搜索目标完全相同"的容器才会命中。
+         * 1.12.2 的物品变体走 Damage（GregTech 的 meta_ingot 等），所以不能只比 NBT。
+         */
         private static boolean matchesExactly(ItemStack stored, ItemStack target) {
-            if (stored.isEmpty() || target.isEmpty() || stored.getItem() != target.getItem()) {
-                return false;
-            }
-            NBTTagCompound storedTag = stored.getTagCompound();
-            NBTTagCompound targetTag = target.getTagCompound();
-            return storedTag == null ? targetTag == null : storedTag.equals(targetTag);
+            return !stored.isEmpty() && !target.isEmpty()
+                    && stored.getItem() == target.getItem()
+                    && stored.getItemDamage() == target.getItemDamage()
+                    && ItemStack.areItemStackTagsEqual(stored, target);
         }
     }
 }

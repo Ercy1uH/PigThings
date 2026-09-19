@@ -98,8 +98,10 @@ public final class ContainerSearchClient {
 
     private static AxisAlignedBB getContainerBox(World world, BlockPos position) {
         AxisAlignedBB box = new AxisAlignedBB(position);
-        BlockPos connectedPos = DoubleChestHelper.getConnectedPosition(world, position);
-        return connectedPos != null ? box.union(new AxisAlignedBB(connectedPos)) : box;
+        for (BlockPos connectedPos : DoubleChestHelper.getConnectedPositions(world, position)) {
+            box = box.union(new AxisAlignedBB(connectedPos));
+        }
+        return box;
     }
 
     private static void facePosition(EntityPlayerSP player, BlockPos position) {

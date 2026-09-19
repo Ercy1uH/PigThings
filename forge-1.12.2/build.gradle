@@ -14,6 +14,12 @@ version = mod_version
 group = mod_group_id
 archivesBaseName = mod_id
 
+// 产物文件名沿用其它线的命名方式：<modid>-<版本>-<加载器>-<MC版本>.jar，
+// 而游戏内 mcmod.info 显示的版本仍是纯 mod_version（1.7.0）。
+jar {
+    archiveName = "${mod_id}-${mod_version}-forge-${minecraft_version}.jar"
+}
+
 sourceCompatibility = targetCompatibility = compileJava.sourceCompatibility = compileJava.targetCompatibility = '1.8'
 
 minecraft {
