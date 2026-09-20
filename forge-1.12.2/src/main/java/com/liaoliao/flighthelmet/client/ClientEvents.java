@@ -103,8 +103,13 @@ public final class ClientEvents {
      * 1.12.2 的 KeyBinding.isKeyDown() 读的是 pressed 字段（由 Minecraft 每 tick 用 setKeyBindState 维护），
      * 而 MC 只在没有界面打开时才更新它 —— 开着箱子/背包界面按 Y 会永远是 false。
      * 这里直接轮询物理按键（仍按绑定后的 keyCode，改键后同样有效）。
+     * F3 是原版调试修饰键：命中组合键（如 F3+G 区块显示）时原版不再把该键交给普通按键路径，
+     * 物理轮询却照样读到按下状态，所以 F3 按住期间不认这两个绑定。
      */
     private static boolean isKeyHeld(KeyBinding binding) {
+        if (Keyboard.isKeyDown(Keyboard.KEY_F3)) {
+            return false;
+        }
         int keyCode = binding.getKeyCode();
         if (keyCode == 0) {
             return false;
