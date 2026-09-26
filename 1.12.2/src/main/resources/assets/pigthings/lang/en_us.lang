@@ -1,0 +1,41 @@
+item.pigthings.nice_helmet.name=nice_helmet
+item.pigthings.nice_ring.name=nice ring
+item.pigthings.nice_pickaxe.name=Nice_pickaxe
+
+key.pigthings.open_settings=Open Settings
+key.pigthings.search_container=Search Nearby Containers
+key.categories.pigthings=pigthings
+
+message.pigthings.search_no_item=Hover an item in an inventory first
+message.pigthings.search_started=Searching nearby containers...
+message.pigthings.search_result=Found %s container(s) containing that item
+message.pigthings.search_target=Targeting container %s of %s
+
+screen.pigthings.title=Nice Helmet Settings
+screen.pigthings.ring.title=Multifunctional Ring Settings
+screen.pigthings.speed=Flight Speed: %sx
+screen.pigthings.no_inertia.on=No Inertia: On
+screen.pigthings.no_inertia.off=No Inertia: Off
+screen.pigthings.night_vision.on=Night Vision: On
+screen.pigthings.night_vision.off=Night Vision: Off
+screen.pigthings.magnet=Magnet
+screen.pigthings.magnet.title=Magnet Settings
+screen.pigthings.magnet.on=Magnet: On
+screen.pigthings.magnet.off=Magnet: Off
+screen.pigthings.magnet.range_x=X Range: %s blocks
+screen.pigthings.magnet.range_y=Y Range: %s blocks
+screen.pigthings.magnet.range_z=Z Range: %s blocks
+screen.pigthings.back=Back
+screen.pigthings.done=Done
+
+tooltip.pigthings.nice_pickaxe.precise.on=Silk Touch: On
+tooltip.pigthings.nice_pickaxe.precise.off=Silk Touch: Off
+screen.pigthings.nice_pickaxe.title=Obstacle Breaker Settings
+screen.pigthings.nice_pickaxe.precise.on=Silk Touch: On
+screen.pigthings.nice_pickaxe.precise.off=Silk Touch: Off
+item.pigthings.pig_ingot.name=Pig-Mi Ingot
+item.pigthings.carrot_saber.name=Carrot Tang Saber
+item.pigthings.trapped_piglin_remains.name=Trapped Piglin Remains
+effect.pigthings.ghost=Ghost Form
+screen.pigthings.clear_fluid_vision.on=Clear Liquid Vision: ON
+screen.pigthings.clear_fluid_vision.off=Clear Liquid Vision: OFF

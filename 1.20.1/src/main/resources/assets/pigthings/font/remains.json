@@ -1,0 +1,12 @@
+{
+  "providers": [
+    {
+      "type": "bitmap",
+      "file": "pigthings:font/pig_glyph.png",
+      "ascent": 8,
+      "height": 9,
+      "chars": ["\ud83d\udc16"]
+    },
+    { "type": "reference", "id": "minecraft:default" }
+  ]
+}

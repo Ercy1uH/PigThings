@@ -31,7 +31,7 @@ dist/
 run-server/
 logs/
 *.log
-/neoforge/*.jar
+/1.21.1/*.jar
 *.tmp
 .DS_Store
 Thumbs.db

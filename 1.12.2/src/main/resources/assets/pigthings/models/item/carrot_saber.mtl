@@ -1,0 +1,4 @@
+newmtl carrot_saber
+Kd 1.000000 1.000000 1.000000
+d 1.000000
+map_Kd pigthings:item/carrot_saber_obj

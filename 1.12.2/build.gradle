@@ -1,0 +1,74 @@
+buildscript {
+    repositories {
+        maven { url = 'https://maven.minecraftforge.net/' }
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'net.minecraftforge.gradle:ForgeGradle:3.+'
+    }
+}
+
+apply plugin: 'net.minecraftforge.gradle'
+
+version = mod_version
+group = mod_group_id
+archivesBaseName = mod_id
+
+// 产物文件名沿用其它线的命名方式：<modid>-<版本>-<加载器>-<MC版本>.jar，
+// 而游戏内 mcmod.info 显示的版本仍是纯 mod_version（1.7.0）。
+jar {
+    archiveName = "${mod_id}-${mod_version}-forge-${minecraft_version}.jar"
+    manifest.attributes('FMLCorePlugin': 'com.liaoliao.flighthelmet.core.GhostRenderPlugin',
+            'FMLCorePluginContainsFMLMod': 'true')
+}
+
+sourceCompatibility = targetCompatibility = compileJava.sourceCompatibility = compileJava.targetCompatibility = '1.8'
+
+minecraft {
+    // 1.12.2 用 MCP 命名，社区标准是 stable 39。
+    mappings channel: 'stable', version: '39-1.12'
+
+    runs {
+        client {
+            workingDirectory project.file('run')
+        }
+
+        server {
+            workingDirectory project.file('run-server')
+        }
+    }
+}
+
+repositories {
+    maven { url = 'https://maven.minecraftforge.net/' }
+}
+
+dependencies {
+    minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
+
+    // ForgeGradle 3 + Forge 1.12.2-14.23.5.2854+ 的已知问题：新版 mergetool 会让 FML 在
+    // 注册自己的网络通道时抛 NullPointerException。只在开发环境（runClient/runServer）出现，
+    // 不影响产出的 jar。必须配合删除 caches/forge_gradle/.../forge/<版本>_mapped_* 缓存。
+    implementation("net.minecraftforge:mergetool:0.2.3.3") { force = true }
+
+    // 戒指依赖 Baubles，运行期必需，编译期只需要 API（取自目标实例的同一份 jar）。
+    compileOnly files('libs/Baubles-1.12-1.5.2.jar')
+    // Optional travel integration, compiled against the installed Ender IO API.
+    compileOnly files('libs/EnderIO-1.12.2-5.0.49.jar', 'libs/EnderCore-1.12.2-0.5.78.jar',
+            'libs/AutoConfig-1.12.2-1.0.2.jar')
+}
+
+// mcmod.info 里的 ${version} / ${mcversion} 需要在这里展开。
+processResources {
+    inputs.property 'version', project.version
+    inputs.property 'mcversion', project.minecraft_version
+    filesMatching('mcmod.info') {
+        expand 'version': project.version, 'mcversion': project.minecraft_version
+    }
+}
+
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+}
+
+jar.finalizedBy('reobfJar')

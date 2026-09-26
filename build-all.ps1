@@ -1,13 +1,13 @@
 <#
-    PigThings - 一键打包三个版本，jar 统一收集到 .\dist
+    PigThings - 一键打包三个版本，jar 按版本收集到 .\dist\<Minecraft版本>
 
     用法（在仓库根目录执行）：
         powershell -ExecutionPolicy Bypass -File .\build-all.ps1
         powershell -ExecutionPolicy Bypass -File .\build-all.ps1 -Targets 1.20.1
         powershell -ExecutionPolicy Bypass -File .\build-all.ps1 -SkipChecks
 
-    根工程和 NeoForge 使用 Gradle 8.8，Forge 1.12.2 使用 Gradle 4.9。
-    自动检测 JDK 17、21、8；构建产物统一收集到 dist。
+    Forge 1.20.1 和 NeoForge 1.21.1 使用 Gradle 8.8，Forge 1.12.2 使用 Gradle 4.9。
+    自动检测 JDK 17、21、8；构建产物按版本收集到 dist。
 #>
 [CmdletBinding()]
 param(
@@ -87,19 +87,24 @@ function Invoke-OneBuild {
 
 function Copy-Artifacts {
     param([Parameter(Mandatory = $true)][System.Collections.IDictionary]$Build)
+    $properties = Get-Content -Raw -LiteralPath (Join-Path $Build.Dir 'gradle.properties') | ConvertFrom-StringData
+    $loader = if ($properties.ContainsKey('forge_version')) { '-forge' } else { '' }
+    $artifactName = '{0}-{1}{2}-{3}.jar' -f $properties.mod_id, $properties.mod_version, $loader, $properties.minecraft_version
     $found = @()
     foreach ($dir in $Build.Collect) {
-        if (-not (Test-Path -LiteralPath $dir)) { continue }
-        $found += Get-ChildItem -LiteralPath $dir -Filter '*.jar' -File -ErrorAction SilentlyContinue |
-                  Where-Object { $_.Name -notmatch '(sources|javadoc)' }
+        $artifact = Join-Path $dir $artifactName
+        if (Test-Path -LiteralPath $artifact -PathType Leaf) {
+            $found += Get-Item -LiteralPath $artifact
+        }
     }
     if ($found.Count -eq 0) {
-        Write-Warning ('{0}: 没找到产物 jar（查找目录: {1}）' -f $Build.Name, ($Build.Collect -join '; '))
-        return @()
+        throw ('{0}: 没找到当前版本产物 {1}（查找目录: {2}）' -f $Build.Name, $artifactName, ($Build.Collect -join '; '))
     }
     $copied = @()
+    $versionDist = Join-Path $dist $Build.Key
+    New-Item -ItemType Directory -Force -Path $versionDist | Out-Null
     foreach ($jar in $found) {
-        $dest = Join-Path $dist $jar.Name
+        $dest = Join-Path $versionDist $jar.Name
         Copy-Item -LiteralPath $jar.FullName -Destination $dest -Force
         $copied += $dest
     }
@@ -110,23 +115,23 @@ $allBuilds = @(
     [ordered]@{
         Key     = '1.20.1'
         Name    = 'Forge 1.20.1'
-        Dir     = $root
+        Dir     = (Join-Path $root '1.20.1')
         Jdk     = 'jdk-17*'
-        Collect = @((Join-Path $root 'build\libs'))
+        Collect = @((Join-Path $root '1.20.1\build\libs'))
     },
     [ordered]@{
         Key     = '1.21.1'
         Name    = 'NeoForge 1.21.1'
-        Dir     = (Join-Path $root 'neoforge')
+        Dir     = (Join-Path $root '1.21.1')
         Jdk     = 'jdk-21*'
-        Collect = @((Join-Path $root 'neoforge\build\libs'))
+        Collect = @((Join-Path $root '1.21.1\build\libs'))
     },
     [ordered]@{
         Key     = '1.12.2'
         Name    = 'Forge 1.12.2'
-        Dir     = (Join-Path $root 'forge-1.12.2')
+        Dir     = (Join-Path $root '1.12.2')
         Jdk     = 'jdk1.8*'
-        Collect = @((Join-Path $root 'forge-1.12.2\build\libs'))
+        Collect = @((Join-Path $root '1.12.2\build\libs'))
     }
 )
 
@@ -157,9 +162,9 @@ foreach ($b in $wanted) {
 
 Write-Host ''
 Write-Host ('产物目录: ' + $dist) -ForegroundColor Cyan
-Get-ChildItem -LiteralPath $dist -Filter '*.jar' -File -ErrorAction SilentlyContinue |
-    Sort-Object Name |
-    ForEach-Object { Write-Host ('  {0,10}  {1}' -f $_.Length, $_.Name) }
+Get-ChildItem -LiteralPath $dist -Filter '*.jar' -File -Recurse -ErrorAction SilentlyContinue |
+    Sort-Object FullName |
+    ForEach-Object { Write-Host ('  {0,10}  {1}' -f $_.Length, $_.FullName.Substring($dist.Length + 1)) }
 
 if ($problems.Count -gt 0) {
     Write-Host ''
